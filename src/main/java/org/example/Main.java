@@ -50,9 +50,11 @@ public class Main {
 
                 System.out.println(stopTimes.iterator().next().getStop().getName() + " " + stopId);
 
-                stopTimes.removeIf(p -> timeUtils.isTimeInRange(p.getArrivalTime(), MAX_TIME_ELAPSED));
+                stopTimes.removeIf(p -> timeUtils.isTimeOutOfRange(LocalTime.now(), p.getArrivalTime(), MAX_TIME_ELAPSED));
 
-                Map<String, List<LocalTime>> groupedResults = stopTimes.stream().map(stopTime -> new AbstractMap.SimpleEntry<>(stopTime.getTrip().getRoute().getShortName(), LocalTime.ofSecondOfDay(stopTime.getArrivalTime()))).collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+                //https://stackoverflow.com/questions/52984816/group-by-a-collection-attribute-using-java-streams
+                Map<String, List<Integer>> groupedResults = stopTimes.stream().map(stopTime -> new AbstractMap.SimpleEntry<>(stopTime.getTrip().getRoute().getShortName(), stopTime.getArrivalTime()))
+                        .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
 
                 printUtils.printGroupedResults(groupedResults, printLimit, timeFormat);
 

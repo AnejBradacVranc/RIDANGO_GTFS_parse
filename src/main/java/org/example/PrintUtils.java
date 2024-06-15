@@ -2,33 +2,31 @@ package org.example;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class PrintUtils{
 
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+    TimeUtils timeUtils = new TimeUtils();
 
-    public void printGroupedResults(Map<String, List<LocalTime>> groupedResults, int limit, String timeFormat){
+    public void printGroupedResults(Map<String, List<Integer>> groupedResults, int limit, String timeFormat){
         if(groupedResults.entrySet().isEmpty()){
             System.out.print("Ni vnosov");
             return;
         }
-        for (Map.Entry<String, List<LocalTime>> entry : groupedResults.entrySet()) {
+        for (Map.Entry<String, List<Integer>> entry : groupedResults.entrySet()) {
 
             System.out.print(entry.getKey() + ": ");
 
-            ListIterator<LocalTime> it = entry.getValue().listIterator();
+            Collections.sort(entry.getValue());
+            ListIterator<Integer> it = entry.getValue().listIterator();
 
             while (it.hasNext()) {
                 if (it.nextIndex() < limit) {
                     if (Objects.equals(timeFormat, "relative")) {
-                        Integer res = (Math.abs(it.next().toSecondOfDay() - LocalTime.now().toSecondOfDay()) / 60);
-                        System.out.print(res + " min ");
+                        System.out.print(timeUtils.getRelativeTime(it.next()) + " min ");
+
                     } else if (Objects.equals(timeFormat, "absolute")) {
-                        System.out.print(it.next().format(formatter) + " ");
+                        System.out.print(timeUtils.getAbsoluteTime(it.next()) + " ");
 
                     }
                 } else {
