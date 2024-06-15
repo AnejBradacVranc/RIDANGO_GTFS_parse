@@ -9,16 +9,24 @@ import org.onebusaway.gtfs.serialization.GtfsReader;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
 
 public class Main {
+
+    static final int MAX_TIME_ELAPSED = 2;
+
     public static void main(String[] args) throws IOException {
+
+        if (args.length != 3 || (!Objects.equals(args[2], "relative") && !Objects.equals(args[2], "absolute"))) {
+
+            System.out.println("Manjakjoči argumenti. Uporaba: <id postaje> <st. naslednjih avtobusov> <relative|absolute>");
+            return;
+
+        }
         try {
             String stopId = args[0];
-            System.out.println("Hello world!");
 
             GtfsReader reader = new GtfsReader();
             reader.setInputLocation(new File("src/gtfs/"));
@@ -26,50 +34,28 @@ public class Main {
             GtfsDaoImpl store = new GtfsDaoImpl();
             reader.setEntityStore(store);
 
-
             reader.run();
-
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
-            LocalTime currentTime = LocalTime.now();
-            LocalTime maxTime = currentTime.plusHours(2);
-
 
             Collection<StopTime> stopTimes = store.getAllStopTimes();
 
-
-            stopTimes.removeIf(p -> !Objects.equals(p.getStop().getId().getId(), stopId));
-
             if (!stopTimes.isEmpty()) {
+                String timeFormat = args[2];
+                int printLimit = Integer.parseInt(args[1]);
 
-                int limit = Integer.parseInt(args[1]);
-
-                System.out.println(stopTimes.iterator().next().getStop().getName());
-
-                stopTimes.removeIf(p -> !LocalTime.ofSecondOfDay(p.getArrivalTime()).isAfter(currentTime) || !LocalTime.ofSecondOfDay(p.getArrivalTime()).isBefore(maxTime));
+                TimeUtils timeUtils = new TimeUtils();
+                PrintUtils printUtils = new PrintUtils();
 
 
-                Map<String, List<LocalTime>> groupedResults = stopTimes.stream()
-                        .map(stopTime -> new AbstractMap.SimpleEntry<>(stopTime.getTrip().getRoute().getShortName(), LocalTime.ofSecondOfDay(stopTime.getArrivalTime())))
-                        .collect(Collectors.groupingBy(
-                                Map.Entry::getKey,
-                                Collectors.mapping(Map.Entry::getValue, Collectors.toList())
-                        ));
+                stopTimes.removeIf(p -> !Objects.equals(p.getStop().getId().getId(), stopId));
 
-                for (Map.Entry<String, List<LocalTime>> entry : groupedResults.entrySet()) {
+                System.out.println(stopTimes.iterator().next().getStop().getName() + " " + stopId);
 
-                    System.out.println("\n" + entry.getKey() + ":");
+                stopTimes.removeIf(p -> timeUtils.isTimeInRange(p.getArrivalTime(), MAX_TIME_ELAPSED));
 
-                    ListIterator<LocalTime> it = entry.getValue().listIterator();
+                Map<String, List<LocalTime>> groupedResults = stopTimes.stream().map(stopTime -> new AbstractMap.SimpleEntry<>(stopTime.getTrip().getRoute().getShortName(), LocalTime.ofSecondOfDay(stopTime.getArrivalTime()))).collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
 
-                    while (it.hasNext()) {
-                        if (it.nextIndex() < limit) {
-                            System.out.print(it.next().format(formatter) + " ");
-                        } else {
-                            break;
-                        }
+                printUtils.printGroupedResults(groupedResults, printLimit, timeFormat);
 
-                    }
-                }
             }
         } catch (MissingRequiredFieldException | CsvEntityIOException e) {
             System.out.println(e.getMessage());
