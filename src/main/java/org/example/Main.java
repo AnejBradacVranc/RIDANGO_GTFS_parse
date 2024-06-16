@@ -48,15 +48,17 @@ public class Main {
 
                 stopTimes.removeIf(p -> !Objects.equals(p.getStop().getId().getId(), stopId));
 
-                System.out.println(stopTimes.iterator().next().getStop().getName() + " " + stopId);
+                if(!stopTimes.isEmpty()){
+                    System.out.println(stopTimes.iterator().next().getStop().getName() + " " + stopId);
 
-                stopTimes.removeIf(p -> timeUtils.isTimeOutOfRange(LocalTime.now(), p.getArrivalTime(), MAX_TIME_ELAPSED));
+                    stopTimes.removeIf(p -> timeUtils.isTimeOutOfRange(LocalTime.now(), p.getArrivalTime(), MAX_TIME_ELAPSED));
 
-                //https://stackoverflow.com/questions/52984816/group-by-a-collection-attribute-using-java-streams
-                Map<String, List<Integer>> groupedResults = stopTimes.stream().map(stopTime -> new AbstractMap.SimpleEntry<>(stopTime.getTrip().getRoute().getShortName(), stopTime.getArrivalTime()))
-                        .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+                    //https://stackoverflow.com/questions/52984816/group-by-a-collection-attribute-using-java-streams
+                    Map<String, List<Integer>> groupedResults = stopTimes.stream().map(stopTime -> new AbstractMap.SimpleEntry<>(stopTime.getTrip().getRoute().getShortName(), stopTime.getArrivalTime()))
+                            .collect(Collectors.groupingBy(Map.Entry::getKey, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
 
-                printUtils.printGroupedResults(groupedResults, printLimit, timeFormat);
+                    printUtils.printGroupedResults(groupedResults, printLimit, timeFormat);
+                }
 
             }
         } catch (MissingRequiredFieldException | CsvEntityIOException e) {
